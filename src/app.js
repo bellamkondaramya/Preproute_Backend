@@ -28,7 +28,7 @@ const allowedOrigins = (env.CORS_ORIGIN || '').split(',').map(s => s.trim()).fil
 // Log configured CORS origins for diagnostics
 console.log('Configured CORS origins:', allowedOrigins.length ? allowedOrigins : ['<none - allow all>']);
 
-const vercelFrontendOriginRE = /^https:\/\/preproute-frontend-[^.]+\.vercel\.app$/;
+const vercelFrontendOriginRE = /^https:\/\/preproute-frontend-[a-z0-9-]+(?:-[a-z0-9-]+)*\.vercel\.app$/i;
 
 const corsOptions = {
   origin: (incomingOrigin, callback) => {
@@ -52,6 +52,17 @@ const corsOptions = {
   preflightContinue: false,
   optionsSuccessStatus: 204
 };
+
+app.use((req, res, next) => {
+  const incomingOrigin = req.headers.origin;
+  if (incomingOrigin && (allowedOrigins.includes(incomingOrigin) || vercelFrontendOriginRE.test(incomingOrigin) || allowedOrigins.includes('*'))) {
+    res.setHeader('Access-Control-Allow-Origin', incomingOrigin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization,Accept,Origin,X-Requested-With');
+  }
+  next();
+});
 
 app.use(cors(corsOptions));
 
