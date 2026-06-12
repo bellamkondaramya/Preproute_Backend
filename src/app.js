@@ -28,7 +28,8 @@ const allowedOrigins = (env.CORS_ORIGIN || '').split(',').map(s => s.trim()).fil
 // Log configured CORS origins for diagnostics
 console.log('Configured CORS origins:', allowedOrigins.length ? allowedOrigins : ['<none - allow all>']);
 
-const vercelFrontendOriginRE = /^https:\/\/preproute-frontend-[a-z0-9-]+(?:-[a-z0-9-]+)*\.vercel\.app$/i;
+// Allow Vercel preview and production subdomains (e.g. preproute-frontend-indol.vercel.app)
+const vercelFrontendOriginRE = /^https:\/\/[a-z0-9-]+(?:\.[a-z0-9-]+)*\.vercel\.app$/i;
 
 const corsOptions = {
   origin: (incomingOrigin, callback) => {
