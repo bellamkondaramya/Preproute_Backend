@@ -1,7 +1,68 @@
+// import mongoose from 'mongoose';
+// import { env } from './env.js';
+
+// let cachedConnection = null;
+
+// export async function connectDB() {
+//   if (mongoose.connection.readyState === 1) {
+//     console.log('Using existing MongoDB connection');
+//     return mongoose.connection;
+//   }
+
+//   if (cachedConnection) {
+//     try {
+//       await cachedConnection;
+//       console.log('Using cached MongoDB connection');
+//       return mongoose.connection;
+//     } catch (error) {
+//       console.error('Cached connection failed:', error);
+//       cachedConnection = null;
+//     }
+//   }
+
+//   mongoose.set('strictQuery', true);
+  
+//   const options = {
+//     serverSelectionTimeoutMS: 30000, // 30 seconds
+//     socketTimeoutMS: 45000,
+//     connectTimeoutMS: 30000,
+//     retryWrites: true,
+//     w: 'majority'
+//   };
+  
+//   console.log('Connecting to MongoDB Atlas...');
+//   cachedConnection = mongoose.connect(env.MONGODB_URI, options);
+  
+//   try {
+//     await cachedConnection;
+//     console.log(`✅ MongoDB connected successfully to: ${mongoose.connection.db.databaseName}`);
+//     return mongoose.connection;
+//   } catch (error) {
+//     console.error('❌ MongoDB connection error:', error.message);
+//     cachedConnection = null;
+//     throw error;
+//   }
+// }
+
+// // Handle connection events
+// mongoose.connection.on('error', (err) => {
+//   console.error('MongoDB connection error:', err);
+// });
+
+// mongoose.connection.on('disconnected', () => {
+//   console.log('MongoDB disconnected');
+// });
+
+// process.on('SIGINT', async () => {
+//   await mongoose.connection.close();
+//   process.exit(0);
+// });
+
+
 import mongoose from 'mongoose';
 import { env } from './env.js';
 
-let cachedConnection = null;
+let cachedConnectionPromise = null;
 
 export async function connectDB() {
   if (mongoose.connection.readyState === 1) {
@@ -9,42 +70,44 @@ export async function connectDB() {
     return mongoose.connection;
   }
 
-  if (cachedConnection) {
+  if (cachedConnectionPromise) {
     try {
-      await cachedConnection;
+      await cachedConnectionPromise;
       console.log('Using cached MongoDB connection');
       return mongoose.connection;
     } catch (error) {
-      console.error('Cached connection failed:', error);
-      cachedConnection = null;
+      console.error('Cached MongoDB connection failed:', error.message);
+      cachedConnectionPromise = null;
     }
   }
 
   mongoose.set('strictQuery', true);
-  
+
   const options = {
-    serverSelectionTimeoutMS: 30000, // 30 seconds
+    serverSelectionTimeoutMS: 30000,
     socketTimeoutMS: 45000,
     connectTimeoutMS: 30000,
     retryWrites: true,
     w: 'majority'
   };
-  
+
   console.log('Connecting to MongoDB Atlas...');
-  cachedConnection = mongoose.connect(env.MONGODB_URI, options);
-  
+
+  cachedConnectionPromise = mongoose.connect(env.MONGODB_URI, options);
+
   try {
-    await cachedConnection;
-    console.log(`✅ MongoDB connected successfully to: ${mongoose.connection.db.databaseName}`);
+    await cachedConnectionPromise;
+    console.log(
+      `✅ MongoDB connected successfully to: ${mongoose.connection.db.databaseName}`
+    );
     return mongoose.connection;
   } catch (error) {
     console.error('❌ MongoDB connection error:', error.message);
-    cachedConnection = null;
+    cachedConnectionPromise = null;
     throw error;
   }
 }
 
-// Handle connection events
 mongoose.connection.on('error', (err) => {
   console.error('MongoDB connection error:', err);
 });
