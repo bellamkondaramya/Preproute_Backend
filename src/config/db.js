@@ -65,6 +65,10 @@ import { env } from './env.js';
 let cachedConnectionPromise = null;
 
 export async function connectDB() {
+  if (!env.MONGODB_URI) {
+    throw new Error('Missing MONGODB_URI environment variable');
+  }
+
   if (mongoose.connection.readyState === 1) {
     console.log('Using existing MongoDB connection');
     return mongoose.connection;
@@ -97,9 +101,11 @@ export async function connectDB() {
 
   try {
     await cachedConnectionPromise;
+
     console.log(
       `✅ MongoDB connected successfully to: ${mongoose.connection.db.databaseName}`
     );
+
     return mongoose.connection;
   } catch (error) {
     console.error('❌ MongoDB connection error:', error.message);
@@ -114,9 +120,4 @@ mongoose.connection.on('error', (err) => {
 
 mongoose.connection.on('disconnected', () => {
   console.log('MongoDB disconnected');
-});
-
-process.on('SIGINT', async () => {
-  await mongoose.connection.close();
-  process.exit(0);
 });

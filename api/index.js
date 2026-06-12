@@ -24,6 +24,12 @@ import app from '../src/app.js';
 import { connectDB } from '../src/config/db.js';
 import { setCorsHeaders } from '../src/config/cors.js';
 
+function sendJson(res, statusCode, payload) {
+  res.statusCode = statusCode;
+  res.setHeader('Content-Type', 'application/json');
+  return res.end(JSON.stringify(payload));
+}
+
 export default async function handler(req, res) {
   console.log(
     'Vercel function request:',
@@ -33,30 +39,49 @@ export default async function handler(req, res) {
     req.headers.origin
   );
 
-  // Set CORS headers before DB connection
   setCorsHeaders(req, res);
 
-  // Preflight request should not connect to DB
   if (req.method === 'OPTIONS') {
     res.statusCode = 204;
     return res.end();
   }
 
-  try {
-    await connectDB();
-  } catch (err) {
-    console.error('Database connection error in Vercel function:', err);
+  const url = req.url || '';
 
-    res.statusCode = 500;
-    res.setHeader('Content-Type', 'application/json');
+  // Health/root should work even if MongoDB has a problem
+  const isHealthOrRoot =
+    url === '/' ||
+    url === '/health' ||
+    url.startsWith('/health?');
 
-    return res.end(
-      JSON.stringify({
-        success: false,
-        message: 'Database connection error'
-      })
-    );
+  if (isHealthOrRoot) {
+    return app(req, res);
   }
 
-  return app(req, res);
+  // Connect DB only for API routes
+  if (url.startsWith('/api')) {
+    try {
+      await connectDB();
+    } catch (err) {
+      console.error('Database connection error in Vercel function:', err);
+
+      return sendJson(res, 500, {
+        success: false,
+        message: 'Database connection error',
+        error: err.message
+      });
+    }
+  }
+
+  try {
+    return app(req, res);
+  } catch (err) {
+    console.error('Unhandled serverless function error:', err);
+
+    return sendJson(res, 500, {
+      success: false,
+      message: 'Serverless function error',
+      error: err.message
+    });
+  }
 }

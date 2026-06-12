@@ -5,26 +5,17 @@ export const allowedOrigins = (env.CORS_ORIGIN || '')
   .map((origin) => origin.trim())
   .filter(Boolean);
 
-// Allows:
-// https://preproute-frontend-indol.vercel.app
-// https://preproute-frontend-drab.vercel.app
-// https://preproute-frontend-6xbltk9c0-bellamkondaramyas-projects.vercel.app
-// https://preproute-frontend-i72qzap2w-bellamkondaramyas-projects.vercel.app
-const preprouteFrontendVercelRegex =
+const preprouteFrontendRegex =
   /^https:\/\/preproute-frontend-[a-z0-9-]+(?:-bellamkondaramyas-projects)?\.vercel\.app$/i;
 
 export function isAllowedOrigin(origin) {
-  // Allow curl, Postman, server-to-server requests
   if (!origin) return true;
 
-  // Explicit wildcard
   if (allowedOrigins.includes('*')) return true;
 
-  // Exact match from env
   if (allowedOrigins.includes(origin)) return true;
 
-  // Allow your Vercel frontend production + preview URLs
-  if (preprouteFrontendVercelRegex.test(origin)) return true;
+  if (preprouteFrontendRegex.test(origin)) return true;
 
   return false;
 }
@@ -39,7 +30,7 @@ export const corsOptions = {
     return callback(null, false);
   },
 
-  credentials: true,
+  credentials: false,
 
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
 
@@ -59,7 +50,6 @@ export function setCorsHeaders(req, res) {
 
   if (origin && isAllowedOrigin(origin)) {
     res.setHeader('Access-Control-Allow-Origin', origin);
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
   }
 
   res.setHeader('Vary', 'Origin');
