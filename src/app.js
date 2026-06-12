@@ -137,10 +137,8 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
-// Required for Vercel/Heroku/proxy deployments
 app.set('trust proxy', 1);
 
-// Security headers
 app.use(
   helmet({
     contentSecurityPolicy: false
@@ -152,14 +150,11 @@ console.log(
   allowedOrigins.length ? allowedOrigins : ['<none>']
 );
 
-// CORS must come before routes, auth middleware, and body parsing
 app.use(cors(corsOptions));
 
-// Body parsing
 app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// Rate limiting
 app.use(
   rateLimit({
     windowMs: 15 * 60 * 1000,
@@ -169,12 +164,10 @@ app.use(
   })
 );
 
-// Logging
 if (env.NODE_ENV !== 'test') {
   app.use(morgan('dev'));
 }
 
-// Health check
 app.get('/health', (_req, res) => {
   res.json({
     success: true,
@@ -182,7 +175,21 @@ app.get('/health', (_req, res) => {
   });
 });
 
-// Root route
+app.get('/debug/server', (_req, res) => {
+  const mongoUri = env.MONGODB_URI || '';
+
+  res.json({
+    success: true,
+    message: 'Backend debug route working',
+    nodeEnv: env.NODE_ENV,
+    hasMongoUri: Boolean(env.MONGODB_URI),
+    mongoUriStartsCorrectly:
+      mongoUri.startsWith('mongodb://') || mongoUri.startsWith('mongodb+srv://'),
+    hasJwtSecret: Boolean(env.JWT_SECRET),
+    corsOrigin: env.CORS_ORIGIN
+  });
+});
+
 app.get('/', (_req, res) => {
   res.json({
     success: true,
@@ -190,26 +197,14 @@ app.get('/', (_req, res) => {
     version: '1.0.0',
     endpoints: {
       health: '/health',
+      debug: '/debug/server',
       api: '/api'
     }
   });
 });
 
-app.get('/debug/server', (_req, res) => {
-  res.json({
-    success: true,
-    message: 'Backend debug route working',
-    nodeEnv: env.NODE_ENV,
-    hasMongoUri: Boolean(env.MONGODB_URI),
-    hasJwtSecret: Boolean(env.JWT_SECRET),
-    corsOrigin: env.CORS_ORIGIN
-  });
-});
-
-// API routes
 app.use('/api', routes);
 
-// Serve React frontend only if backend and frontend are deployed together
 const distPath = path.join(__dirname, '../../frontend/dist');
 
 if (env.NODE_ENV === 'production' && fs.existsSync(distPath)) {
@@ -222,7 +217,6 @@ if (env.NODE_ENV === 'production' && fs.existsSync(distPath)) {
   app.use(notFound);
 }
 
-// Error handler must be last
 app.use(errorHandler);
 
 export default app;

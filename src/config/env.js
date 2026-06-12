@@ -16,12 +16,26 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+function cleanMongoUri(value) {
+  if (!value) return '';
+
+  let uri = value.trim();
+
+  // Fix accidental value like:
+  // MONGODB_URI=mongodb+srv://...
+  if (uri.startsWith('MONGODB_URI=')) {
+    uri = uri.replace(/^MONGODB_URI=/, '').trim();
+  }
+
+  return uri;
+}
+
 export const env = {
   PORT: Number(process.env.PORT || 5001),
 
   NODE_ENV: process.env.NODE_ENV || 'development',
 
-  MONGODB_URI: process.env.MONGODB_URI,
+  MONGODB_URI: cleanMongoUri(process.env.MONGODB_URI),
 
   JWT_SECRET:
     process.env.JWT_SECRET ||

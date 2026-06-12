@@ -69,6 +69,15 @@ export async function connectDB() {
     throw new Error('Missing MONGODB_URI environment variable');
   }
 
+  if (
+    !env.MONGODB_URI.startsWith('mongodb://') &&
+    !env.MONGODB_URI.startsWith('mongodb+srv://')
+  ) {
+    throw new Error(
+      `Invalid MONGODB_URI. It must start with mongodb:// or mongodb+srv://`
+    );
+  }
+
   if (mongoose.connection.readyState === 1) {
     console.log('Using existing MongoDB connection');
     return mongoose.connection;
@@ -92,7 +101,8 @@ export async function connectDB() {
     socketTimeoutMS: 45000,
     connectTimeoutMS: 30000,
     retryWrites: true,
-    w: 'majority'
+    w: 'majority',
+    maxPoolSize: 5
   };
 
   console.log('Connecting to MongoDB Atlas...');
@@ -115,7 +125,7 @@ export async function connectDB() {
 }
 
 mongoose.connection.on('error', (err) => {
-  console.error('MongoDB connection error:', err);
+  console.error('MongoDB connection error:', err.message);
 });
 
 mongoose.connection.on('disconnected', () => {

@@ -48,35 +48,43 @@ export default async function handler(req, res) {
 
   const url = req.url || '';
 
-  // Health/root should work even if MongoDB has a problem
-  const isHealthOrRoot =
+  const skipDb =
     url === '/' ||
     url === '/health' ||
-    url.startsWith('/health?');
+    url.startsWith('/health?') ||
+    url === '/debug/server' ||
+    url.startsWith('/debug/server?');
 
-  if (isHealthOrRoot) {
-    return app(req, res);
-  }
-
-  // Connect DB only for API routes
-  if (url.startsWith('/api')) {
+  if (skipDb) {
     try {
-      await connectDB();
+      return app(req, res);
     } catch (err) {
-      console.error('Database connection error in Vercel function:', err);
+      console.error('❌ Serverless debug/health error:', err);
 
       return sendJson(res, 500, {
         success: false,
-        message: 'Database connection error',
+        message: 'Serverless debug/health error',
         error: err.message
       });
     }
   }
 
   try {
+    await connectDB();
+  } catch (err) {
+    console.error('❌ Database connection error in Vercel function:', err);
+
+    return sendJson(res, 500, {
+      success: false,
+      message: 'Database connection error',
+      error: err.message
+    });
+  }
+
+  try {
     return app(req, res);
   } catch (err) {
-    console.error('Unhandled serverless function error:', err);
+    console.error('❌ Unhandled serverless function error:', err);
 
     return sendJson(res, 500, {
       success: false,
