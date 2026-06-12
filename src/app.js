@@ -195,6 +195,17 @@ app.get('/', (_req, res) => {
   });
 });
 
+app.get('/debug/server', (_req, res) => {
+  res.json({
+    success: true,
+    message: 'Backend debug route working',
+    nodeEnv: env.NODE_ENV,
+    hasMongoUri: Boolean(env.MONGODB_URI),
+    hasJwtSecret: Boolean(env.JWT_SECRET),
+    corsOrigin: env.CORS_ORIGIN
+  });
+});
+
 // API routes
 app.use('/api', routes);
 
