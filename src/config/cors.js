@@ -5,12 +5,28 @@ export const allowedOrigins = (env.CORS_ORIGIN || '')
   .map((origin) => origin.trim())
   .filter(Boolean);
 
+// Allows:
+// https://preproute-frontend-indol.vercel.app
+// https://preproute-frontend-drab.vercel.app
+// https://preproute-frontend-6xbltk9c0-bellamkondaramyas-projects.vercel.app
+// https://preproute-frontend-i72qzap2w-bellamkondaramyas-projects.vercel.app
+const preprouteFrontendVercelRegex =
+  /^https:\/\/preproute-frontend-[a-z0-9-]+(?:-bellamkondaramyas-projects)?\.vercel\.app$/i;
+
 export function isAllowedOrigin(origin) {
+  // Allow curl, Postman, server-to-server requests
   if (!origin) return true;
 
+  // Explicit wildcard
   if (allowedOrigins.includes('*')) return true;
 
-  return allowedOrigins.includes(origin);
+  // Exact match from env
+  if (allowedOrigins.includes(origin)) return true;
+
+  // Allow your Vercel frontend production + preview URLs
+  if (preprouteFrontendVercelRegex.test(origin)) return true;
+
+  return false;
 }
 
 export const corsOptions = {
